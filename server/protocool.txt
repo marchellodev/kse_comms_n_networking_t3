@@ -1,0 +1,6 @@
+Unless having state, the server is always expecting for a 32bit uint as a command
+
+Defined command:
+> 5: ping
+> 6: pong (sent from the server)
+
