@@ -7,6 +7,8 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -32,7 +34,9 @@ func executeCLI(writer *bufio.Writer) {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		command := scanner.Text()
-		switch command {
+		parts := strings.Split(command, " ")
+
+		switch parts[0] {
 		case "ping":
 			write(writer, []uint32{5})
 			fmt.Println("> ping sent")
@@ -51,6 +55,14 @@ func executeCLI(writer *bufio.Writer) {
 			}
 
 			fmt.Println("> matrices sent")
+		case "sum":
+			id, err := strconv.Atoi(parts[1])
+			if err != nil {
+				fmt.Println("Invalid id.")
+				continue
+			}
+			fmt.Println("> summing matrices with id:", id)
+			write(writer, []uint32{9, uint32(id)})
 
 		default:
 			fmt.Println("Invalid command.")
@@ -106,7 +118,7 @@ func read(reader *bufio.Reader) uint32 {
 		fmt.Println("Failed to read server response:", err.Error())
 		os.Exit(1)
 	}
-	return number;
+	return number
 }
 
 // expects a row of numbers, automatically transforms them to bytes

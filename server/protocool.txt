@@ -6,4 +6,6 @@ Defined basic command:
 
 7 <matrix size>: client sends the size of the matrix, then sends the two matrices (one elemenet at a time)
 8 <matrix id>: sever sends the recently added matrix id to the client
+9 <matrix id>: client asks server to add the two matrices
+10 <matrix id>: server sends the result of the addition to the client
 

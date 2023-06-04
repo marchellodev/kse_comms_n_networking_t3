@@ -1,9 +1,14 @@
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use std::{
+    collections::HashMap,
     io::{prelude::*, BufReader, BufWriter, Cursor},
     net::{TcpListener, TcpStream},
     sync::{Arc, Mutex},
 };
+
+use crate::calculate::calculate_detached;
+
+mod calculate;
 
 type Matrix = Vec<Vec<u32>>;
 
@@ -11,16 +16,21 @@ fn main() {
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
 
     let matrices: Arc<Mutex<Vec<(Matrix, Matrix)>>> = Arc::new(Mutex::new(Vec::new()));
+    let results: Arc<Mutex<HashMap<usize, Matrix>>> = Arc::new(Mutex::new(HashMap::new()));
 
     for stream in listener.incoming() {
         let stream = stream.unwrap();
 
         println!("Connection established!");
-        handle_connection(stream, &matrices.clone());
+        handle_connection(stream, &matrices.clone(), &results.clone());
     }
 }
 
-fn handle_connection(stream: TcpStream, matrix_store: &Mutex<Vec<(Matrix, Matrix)>>) {
+fn handle_connection(
+    stream: TcpStream,
+    matrix_store: &Mutex<Vec<(Matrix, Matrix)>>,
+    results_store: &Arc<Mutex<HashMap<usize, Matrix>>>,
+) {
     let stream_clone = stream.try_clone().expect("Failed to clone TcpStream.");
 
     let mut buf_reader = BufReader::new(stream);
@@ -78,6 +88,20 @@ fn handle_connection(stream: TcpStream, matrix_store: &Mutex<Vec<(Matrix, Matrix
                 buf_writer.write_u32::<BigEndian>(8).unwrap();
                 buf_writer.write_u32::<BigEndian>(matrix_id as u32).unwrap();
                 buf_writer.flush().unwrap();
+            }
+            9 => {
+                println!("> Calculating the sum of the matrices");
+                let matrix_id = read_number(&mut buf_reader);
+                println!(" > Matrix id: {}", matrix_id);
+
+                let matrices = matrix_store.lock().unwrap()[matrix_id as usize].clone();
+
+                calculate_detached(
+                    matrices.0,
+                    matrices.1,
+                    matrix_id as usize,
+                    results_store.clone(),
+                );
             }
             _ => {
                 println!("Unknown request")
