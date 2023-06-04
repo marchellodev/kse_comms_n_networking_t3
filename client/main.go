@@ -30,6 +30,13 @@ func main() {
 
 func executeCLI(writer *bufio.Writer) {
 	fmt.Println("Connection established.")
+	fmt.Println(`Commands:
+		> ping: sends a ping to the server
+		> send_4: generates and sends two 4x4 matrices to the server
+		> send_10k: generates and sends two 10 000 x 10 000 matrices to the server
+		> sum <id>: sums the matrices with the given id
+		> status <id>: gets the status of the sum of pair with the given id
+		`)
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
@@ -55,6 +62,22 @@ func executeCLI(writer *bufio.Writer) {
 			}
 
 			fmt.Println("> matrices sent")
+
+		case "send_10k":
+			matrix1 := generateMatrix(10000)
+			matrix2 := generateMatrix(10000)
+			fmt.Println("> matrices generated")
+
+			write(writer, []uint32{7, 10000})
+			for _, row := range matrix1 {
+				write(writer, row)
+			}
+			for _, row := range matrix2 {
+				write(writer, row)
+			}
+
+			fmt.Println("> matrices sent")
+
 		case "sum":
 			id, err := strconv.Atoi(parts[1])
 			if err != nil {
@@ -63,6 +86,15 @@ func executeCLI(writer *bufio.Writer) {
 			}
 			fmt.Println("> summing matrices with id:", id)
 			write(writer, []uint32{9, uint32(id)})
+
+		case "status":
+			id, err := strconv.Atoi(parts[1])
+			if err != nil {
+				fmt.Println("Invalid id.")
+				continue
+			}
+			fmt.Println("> getting matrix status for id:", id)
+			write(writer, []uint32{10, uint32(id)})
 
 		default:
 			fmt.Println("Invalid command.")
@@ -102,6 +134,33 @@ func initReader(reader *bufio.Reader) {
 				id := read(reader)
 
 				fmt.Println("> matrix pair stored with id:", id)
+
+			case 11:
+				id := read(reader)
+				fmt.Println("> no calculation yet for id:", id)
+
+			case 12:
+				id := read(reader)
+				size := read(reader)
+				fmt.Println("> there is a calculation for id, size:", id, size)
+				// read the matrix from the server
+				matrix := make([][]uint32, size)
+				for i := range matrix {
+					matrix[i] = make([]uint32, size)
+					for j := range matrix[i] {
+						matrix[i][j] = read(reader)
+					}
+				}
+				// print the matrix
+				if size > 10 {
+					fmt.Println("> matrix too big to print")
+					continue
+				}
+
+				fmt.Println("> matrix:")
+				for _, row := range matrix {
+					fmt.Println(row)
+				}
 
 			default:
 				fmt.Println("> unknown received:", number)

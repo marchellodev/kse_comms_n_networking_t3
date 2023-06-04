@@ -1,11 +1,15 @@
 Unless having state, the server is always expecting for a 32bit uint as a command
 
 Defined basic command:
-> 5: ping
-> 6: pong (sent from the server)
+5: client sends ping
+  6: server returns pong
 
 7 <matrix size>: client sends the size of the matrix, then sends the two matrices (one elemenet at a time)
-8 <matrix id>: sever sends the recently added matrix id to the client
+  8 <matrix id>: sever sends the recently added matrix id to the client
+
 9 <matrix id>: client asks server to add the two matrices
-10 <matrix id>: server sends the result of the addition to the client
+
+10 <matrix id>: client asks server for the result of the matrix addition
+  11: server response no result yer
+  12 <matrix size>: server returns the sum12
 

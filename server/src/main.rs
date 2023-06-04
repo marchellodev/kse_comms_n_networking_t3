@@ -76,9 +76,14 @@ fn handle_connection(
                 }
 
                 println!(" > Matrices received:");
-                print_matrix(&matrix1);
-                println!("");
-                print_matrix(&matrix2);
+                if size < 10 {
+                    print_matrix(&matrix1);
+                    println!("");
+                    print_matrix(&matrix2);
+                } else {
+                    println!(" > Matrices are too big to print");
+                }
+
                 let mut lock = matrix_store.lock().unwrap();
 
                 let matrix_id = lock.len();
@@ -103,6 +108,41 @@ fn handle_connection(
                     results_store.clone(),
                 );
             }
+            10 => {
+                println!("> Getting calculation status");
+                let matrix_id = read_number(&mut buf_reader);
+                println!(" > Matrix id: {}", matrix_id);
+
+                let result = results_store.lock().unwrap();
+                let result = result.get(&(matrix_id as usize));
+
+                if result.is_none() {
+                    buf_writer.write_u32::<BigEndian>(11).unwrap();
+                    buf_writer.write_u32::<BigEndian>(matrix_id).unwrap();
+                    buf_writer.flush().unwrap();
+                    println!(" > No result sent!");
+
+                    continue;
+                }
+
+                let result = result.unwrap();
+
+                buf_writer.write_u32::<BigEndian>(12).unwrap();
+                buf_writer.write_u32::<BigEndian>(matrix_id).unwrap();
+
+                buf_writer
+                    .write_u32::<BigEndian>(result.len() as u32)
+                    .unwrap();
+
+                for row in result {
+                    for elem in row {
+                        buf_writer.write_u32::<BigEndian>(*elem).unwrap();
+                    }
+                }
+                buf_writer.flush().unwrap();
+                println!(" > Result sent!");
+            }
+
             _ => {
                 println!("Unknown request")
             }

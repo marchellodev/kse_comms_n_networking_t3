@@ -15,7 +15,6 @@ use crate::Matrix;
 const THREADS: usize = 4;
 const PRINT_MATRICES: bool = true;
 
-
 // fn main() {
 //     let mut rng = SmallRng::from_seed(RNG_SEED);
 //
@@ -41,7 +40,7 @@ pub fn calculate_detached(
         let mut result_map = result_map.lock().unwrap();
         result_map.insert(id, result);
         println!("detached calculate finished: {}", id);
-        print_matrix(&result_map[&id]);
+        // print_matrix(&result_map[&id]);
     });
 }
 
@@ -51,8 +50,9 @@ fn calculate(a: Matrix, b: Matrix) -> Matrix {
 
     let a = Arc::new(a);
     let b = Arc::new(b);
+    let size = a.len();
 
-    if PRINT_MATRICES {
+    if PRINT_MATRICES && size < 10 {
         print_matrix(&a);
         println!();
         print_matrix(&b);
@@ -64,7 +64,6 @@ fn calculate(a: Matrix, b: Matrix) -> Matrix {
         (setup_elapsed.as_secs_f64() * 1000.0)
     );
 
-    let size = a.len();
     let mut sum: Vec<Vec<u32>> = vec![vec![0; size]; size];
 
     if THREADS == 0 {
@@ -90,7 +89,7 @@ fn calculate(a: Matrix, b: Matrix) -> Matrix {
         }
     }
 
-    if PRINT_MATRICES {
+    if PRINT_MATRICES && size < 10 {
         print_matrix(&sum);
     }
 
