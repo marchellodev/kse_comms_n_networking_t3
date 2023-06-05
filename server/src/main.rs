@@ -4,6 +4,7 @@ use std::{
     io::{prelude::*, BufReader, BufWriter, Cursor},
     net::{TcpListener, TcpStream},
     sync::{Arc, Mutex},
+    thread,
 };
 
 use crate::calculate::calculate_detached;
@@ -22,7 +23,13 @@ fn main() {
         let stream = stream.unwrap();
 
         println!("Connection established!");
-        handle_connection(stream, &matrices.clone(), &results.clone());
+
+        let matrices = matrices.clone();
+        let results = results.clone();
+
+        thread::spawn(move || {
+            handle_connection(stream, &matrices, &results);
+        });
     }
 }
 
