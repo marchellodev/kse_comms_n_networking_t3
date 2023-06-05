@@ -13,6 +13,15 @@ mod calculate;
 
 type Matrix = Vec<Vec<u32>>;
 
+const PING: u32 = 5;
+const PONG: u32 = 6;
+const MATRIX_RECEIVING: u32 = 7;
+const MATRIX_RECEIVED: u32 = 8;
+const MATRIX_CALCULATE_SUM: u32 = 9;
+const MATRIX_SUM_RESULT: u32 = 10;
+const MATRIX_SUM_RESULT_NO: u32 = 11;
+const MATRIX_SUM_RESULT_SENDING: u32 = 12;
+
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
 
@@ -55,12 +64,12 @@ fn handle_connection(
         println!("> Received request: {:#?}", decoded);
 
         match decoded {
-            5 => {
+            PING => {
                 println!("> Received ping from the server, sendig pong");
-                buf_writer.write_u32::<BigEndian>(6).unwrap();
+                buf_writer.write_u32::<BigEndian>(PONG).unwrap();
                 buf_writer.flush().unwrap();
             }
-            7 => {
+            MATRIX_RECEIVING => {
                 println!(" > Preparing to receive a matrix");
                 let size = read_number(&mut buf_reader);
                 println!(" > Matrix size: {}x{}", size, size);
@@ -97,11 +106,11 @@ fn handle_connection(
 
                 lock.push((matrix1, matrix2));
                 println!(" > Matrice pair stored with id: {}", matrix_id);
-                buf_writer.write_u32::<BigEndian>(8).unwrap();
+                buf_writer.write_u32::<BigEndian>(MATRIX_RECEIVED).unwrap();
                 buf_writer.write_u32::<BigEndian>(matrix_id as u32).unwrap();
                 buf_writer.flush().unwrap();
             }
-            9 => {
+            MATRIX_CALCULATE_SUM => {
                 println!("> Calculating the sum of the matrices");
                 let matrix_id = read_number(&mut buf_reader);
                 println!(" > Matrix id: {}", matrix_id);
@@ -115,7 +124,7 @@ fn handle_connection(
                     results_store.clone(),
                 );
             }
-            10 => {
+            MATRIX_SUM_RESULT => {
                 println!("> Getting calculation status");
                 let matrix_id = read_number(&mut buf_reader);
                 println!(" > Matrix id: {}", matrix_id);
@@ -124,7 +133,9 @@ fn handle_connection(
                 let result = result.get(&(matrix_id as usize));
 
                 if result.is_none() {
-                    buf_writer.write_u32::<BigEndian>(11).unwrap();
+                    buf_writer
+                        .write_u32::<BigEndian>(MATRIX_SUM_RESULT_NO)
+                        .unwrap();
                     buf_writer.write_u32::<BigEndian>(matrix_id).unwrap();
                     buf_writer.flush().unwrap();
                     println!(" > No result sent!");
@@ -134,7 +145,9 @@ fn handle_connection(
 
                 let result = result.unwrap();
 
-                buf_writer.write_u32::<BigEndian>(12).unwrap();
+                buf_writer
+                    .write_u32::<BigEndian>(MATRIX_SUM_RESULT_SENDING)
+                    .unwrap();
                 buf_writer.write_u32::<BigEndian>(matrix_id).unwrap();
 
                 buf_writer

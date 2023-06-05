@@ -12,6 +12,17 @@ import (
 	"time"
 )
 
+const (
+	PING                      = 5
+	PONG                      = 6
+	MATRIX_RECEIVING          = 7
+	MATRIX_RECEIVED           = 8
+	MATRIX_CALCULATE_SUM      = 9
+	MATRIX_SUM_RESULT         = 10
+	MATRIX_SUM_RESULT_NO      = 11
+	MATRIX_SUM_RESULT_SENDING = 12
+)
+
 func main() {
 	tcpServer, err := net.ResolveTCPAddr("tcp", "localhost:7878")
 
@@ -45,7 +56,7 @@ func executeCLI(writer *bufio.Writer) {
 
 		switch parts[0] {
 		case "ping":
-			write(writer, []uint32{5})
+			write(writer, []uint32{PING})
 			fmt.Println("> ping sent")
 
 		case "send_4":
@@ -53,7 +64,7 @@ func executeCLI(writer *bufio.Writer) {
 			matrix2 := generateMatrix(4)
 			fmt.Println("> matrices generated")
 
-			write(writer, []uint32{7, 4})
+			write(writer, []uint32{MATRIX_RECEIVING, 4})
 			for _, row := range matrix1 {
 				write(writer, row)
 			}
@@ -68,7 +79,7 @@ func executeCLI(writer *bufio.Writer) {
 			matrix2 := generateMatrix(10000)
 			fmt.Println("> matrices generated")
 
-			write(writer, []uint32{7, 10000})
+			write(writer, []uint32{MATRIX_RECEIVING, 10000})
 			for _, row := range matrix1 {
 				write(writer, row)
 			}
@@ -85,7 +96,7 @@ func executeCLI(writer *bufio.Writer) {
 				continue
 			}
 			fmt.Println("> summing matrices with id:", id)
-			write(writer, []uint32{9, uint32(id)})
+			write(writer, []uint32{MATRIX_CALCULATE_SUM, uint32(id)})
 
 		case "status":
 			id, err := strconv.Atoi(parts[1])
@@ -94,7 +105,7 @@ func executeCLI(writer *bufio.Writer) {
 				continue
 			}
 			fmt.Println("> getting matrix status for id:", id)
-			write(writer, []uint32{10, uint32(id)})
+			write(writer, []uint32{MATRIX_SUM_RESULT, uint32(id)})
 
 		default:
 			fmt.Println("Invalid command.")
@@ -127,19 +138,19 @@ func initReader(reader *bufio.Reader) {
 				os.Exit(1)
 			}
 			switch number {
-			case 6:
+			case PONG:
 				fmt.Println("> pong received")
 
-			case 8:
+			case MATRIX_RECEIVED:
 				id := read(reader)
 
 				fmt.Println("> matrix pair stored with id:", id)
 
-			case 11:
+			case MATRIX_SUM_RESULT_NO:
 				id := read(reader)
 				fmt.Println("> no calculation yet for id:", id)
 
-			case 12:
+			case MATRIX_SUM_RESULT_SENDING:
 				id := read(reader)
 				size := read(reader)
 				fmt.Println("> there is a calculation for id, size:", id, size)
